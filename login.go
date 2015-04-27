@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"text/template"
 	"time"
 
@@ -47,9 +48,12 @@ func serveServiceTicket(w http.ResponseWriter, r *http.Request, tgt string, svc 
 func isServiceWhitelisted(svc string) bool {
 	if svc != "" && len(util.GetConfig().Services) > 0 {
 		matched := false
-		for _, s := range util.GetConfig().Services {
-			if s == svc {
-				matched = true
+		u, err := url.Parse(svc)
+		if err == nil {
+			for _, s := range util.GetConfig().Services {
+				if s == u.Host {
+					matched = true
+				}
 			}
 		}
 		return matched
