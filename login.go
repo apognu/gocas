@@ -7,6 +7,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/apognu/gocas/config"
 	"github.com/apognu/gocas/ticket"
 	"github.com/apognu/gocas/util"
 	"gopkg.in/mgo.v2/bson"
@@ -46,11 +47,11 @@ func serveServiceTicket(w http.ResponseWriter, r *http.Request, tgt string, svc 
 }
 
 func isServiceWhitelisted(svc string) bool {
-	if svc != "" && len(util.GetConfig().Services) > 0 {
+	if svc != "" && len(config.Get().Services) > 0 {
 		matched := false
 		u, err := url.Parse(svc)
 		if err == nil {
-			for _, s := range util.GetConfig().Services {
+			for _, s := range config.Get().Services {
 				if s == u.Host {
 					matched = true
 				}
@@ -118,7 +119,7 @@ func loginAcceptorHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	auth := util.AvailableAuthenticators[util.GetConfig().Authenticator]
+	auth := util.AvailableAuthenticators[config.Get().Authenticator]
 	if !auth.Auth(u, p) {
 		showLoginForm(w, util.LoginRequestorData{Service: svc, Type: "danger", Message: "The credential you provided were incorrect.", ShowForm: true})
 		return

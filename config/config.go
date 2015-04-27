@@ -1,4 +1,4 @@
-package util
+package config
 
 import (
 	"io/ioutil"
@@ -19,15 +19,20 @@ type Config struct {
 		ServiceTicket        int `yaml:"service_ticket"`
 	} `yaml:"ticket_validity"`
 	Authenticator string `yaml:"authenticator"`
+	Ldap          struct {
+		Host string `yaml:"host"`
+		Base string `yaml:"base"`
+		Dn   string `yaml:"dn"`
+	} `yaml:"ldap"`
 }
 
 var c Config
 
-func GetConfig() Config {
+func Get() Config {
 	return c
 }
 
-func SetConfig(p string) {
+func Set(p string) {
 	f, err := ioutil.ReadFile(p)
 	if err != nil {
 		logrus.Fatalf("error parsing configuration file: %s", err)

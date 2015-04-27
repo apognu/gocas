@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/apognu/gocas/util"
+	"github.com/apognu/gocas/config"
 )
 
 type LoginTicket struct {
@@ -20,7 +20,7 @@ func NewLoginTicket(svc string) LoginTicket {
 		lt[i] = TicketRunes[rand.Intn(len(TicketRunes))]
 	}
 
-	t := time.Unix(time.Now().Unix()+int64(util.GetConfig().TicketValidity.LoginTicket), 0)
+	t := time.Unix(time.Now().Unix()+int64(config.Get().TicketValidity.LoginTicket), 0)
 	return LoginTicket{
 		Service:  svc,
 		Ticket:   "LT-" + string(lt),

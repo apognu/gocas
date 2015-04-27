@@ -7,12 +7,13 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/apognu/gocas/config"
 	"github.com/apognu/gocas/util"
 	"github.com/gorilla/mux"
 )
 
 var (
-	config = flag.String("config", "/etc/gocas.yaml", "path to GoCAS configuration file")
+	c = flag.String("config", "/etc/gocas.yaml", "path to GoCAS configuration file")
 )
 
 func redirect(w http.ResponseWriter, r *http.Request) {
@@ -23,12 +24,12 @@ func redirect(w http.ResponseWriter, r *http.Request) {
 func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	util.SetConfig(*config)
+	config.Set(*c)
 
 	r := mux.NewRouter().StrictSlash(true)
 	r.HandleFunc("/", redirect).Methods("GET")
 
-	prefix := util.GetConfig().UrlPrefix
+	prefix := config.Get().UrlPrefix
 	sr := r
 	if prefix != "" {
 		sr = r.PathPrefix(prefix).Subrouter()

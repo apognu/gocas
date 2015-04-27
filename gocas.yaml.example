@@ -13,3 +13,9 @@ ticket_validity:
   service_ticket: 30
 
 authenticator: dummy
+# authenticator: ldap
+
+ldap:
+	host: ldap://127.0.0.1
+	base: ou=Users,dc=domain,dc=tld
+	dn: uid

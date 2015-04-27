@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/apognu/gocas/config"
 	"github.com/apognu/gocas/util"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -23,7 +24,7 @@ func NewServiceTicket(tgt string, svc string, sso bool) ServiceTicket {
 		st[i] = TicketRunes[rand.Intn(len(TicketRunes))]
 	}
 
-	t := time.Unix(time.Now().Unix()+int64(util.GetConfig().TicketValidity.ServiceTicket), 0)
+	t := time.Unix(time.Now().Unix()+int64(config.Get().TicketValidity.ServiceTicket), 0)
 	return ServiceTicket{
 		Service:  svc,
 		Tgt:      tgt,

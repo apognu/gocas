@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/apognu/gocas/util"
+	"github.com/apognu/gocas/config"
 )
 
 type TicketGrantingTicket struct {
@@ -21,7 +21,7 @@ func NewTicketGrantingTicket(u string, ip string) TicketGrantingTicket {
 		tgt[i] = TicketRunes[rand.Intn(len(TicketRunes))]
 	}
 
-	t := time.Unix(time.Now().Unix()+int64(util.GetConfig().TicketValidity.TicketGrantingTicket), 0)
+	t := time.Unix(time.Now().Unix()+int64(config.Get().TicketValidity.TicketGrantingTicket), 0)
 	return TicketGrantingTicket{
 		Ticket:   "TGT-" + string(tgt),
 		Username: u,

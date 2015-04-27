@@ -3,10 +3,12 @@ package util
 import (
 	"fmt"
 	"strings"
+
+	"github.com/apognu/gocas/config"
 )
 
 func Url(path string) string {
-	return fmt.Sprintf("%s%s", GetConfig().UrlPrefix, path)
+	return fmt.Sprintf("%s%s", config.Get().UrlPrefix, path)
 }
 
 func GetRemoteAddr(raddr string) string {

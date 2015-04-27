@@ -71,4 +71,5 @@ type Authenticator interface {
 
 var AvailableAuthenticators = map[string]Authenticator{
 	"dummy": authenticator.Dummy{},
+	"ldap":  authenticator.Ldap{},
 }
