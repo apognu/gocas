@@ -4,17 +4,25 @@ import (
 	"encoding/xml"
 
 	"github.com/apognu/gocas/authenticator"
+	"github.com/apognu/gocas/config"
 )
 
 type LoginRequestorData struct {
+	Config   config.Config
+	Session  LoginRequestorSession
+	Message  LoginRequestorMessage
+	ShowForm bool
+}
+
+type LoginRequestorSession struct {
 	Ticket   string
 	Service  string
-	Type     string
-	Message  string
 	Username string
-	ShowForm bool
-	Url      string
-	Logout   string
+}
+
+type LoginRequestorMessage struct {
+	Type    string
+	Message string
 }
 
 type CASServiceResponse struct {

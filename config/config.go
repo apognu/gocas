@@ -8,6 +8,7 @@ import (
 )
 
 type Config struct {
+	Title     string `yaml:"title"`
 	UrlPrefix string `yaml:"url_prefix"`
 	Mongo     struct {
 		Host string `yaml:"host"`

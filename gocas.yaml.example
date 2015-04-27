@@ -1,4 +1,5 @@
 ---
+title: GoCAS - Single Sign-On
 url_prefix: /cas
 
 mongo:

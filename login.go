@@ -14,8 +14,8 @@ import (
 )
 
 func showLoginForm(w http.ResponseWriter, data util.LoginRequestorData) {
-	lt := ticket.NewLoginTicket(data.Service)
-	data.Ticket = lt.Ticket
+	lt := ticket.NewLoginTicket(data.Session.Service)
+	data.Session.Ticket = lt.Ticket
 	util.GetPersistence("lt").Insert(lt)
 
 	t, err := template.ParseFiles("template/login.tmpl")
@@ -43,7 +43,7 @@ func serveServiceTicket(w http.ResponseWriter, r *http.Request, tgt string, svc 
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	t.Execute(w, util.LoginRequestorData{Service: svc, Username: tkt.Username, Url: url})
+	t.Execute(w, util.LoginRequestorData{Config: config.Get(), Session: util.LoginRequestorSession{Service: svc, Username: tkt.Username}})
 }
 
 func isServiceWhitelisted(svc string) bool {
@@ -68,7 +68,11 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 	renew, gateway := r.FormValue("renew"), r.FormValue("gateway")
 
 	if !isServiceWhitelisted(svc) {
-		showLoginForm(w, util.LoginRequestorData{Service: svc, Type: "danger", Message: fmt.Sprintf("Service <b>%s</b> is not allowed to use the SSO.", svc), ShowForm: false})
+		showLoginForm(w, util.LoginRequestorData{
+			Config:   config.Get(),
+			Session:  util.LoginRequestorSession{Service: svc},
+			Message:  util.LoginRequestorMessage{Type: "danger", Message: fmt.Sprintf("Service <b>%s</b> is not allowed to use the SSO.", svc)},
+			ShowForm: false})
 		return
 	}
 
@@ -83,18 +87,25 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 				serveServiceTicket(w, r, tkt.Ticket, svc, true)
 				return
 			} else {
-				showLoginForm(w, util.LoginRequestorData{Service: svc, Username: tkt.Username, Logout: util.Url("/logout")})
+				showLoginForm(w, util.LoginRequestorData{
+					Config:  config.Get(),
+					Session: util.LoginRequestorSession{Service: svc, Username: tkt.Username}})
 				return
 			}
 		}
 	}
 
 	if gateway == "true" {
-		showLoginForm(w, util.LoginRequestorData{Type: "danger", Message: "This service requires a pre-established SSO session."})
+		showLoginForm(w, util.LoginRequestorData{
+			Config:  config.Get(),
+			Message: util.LoginRequestorMessage{Type: "danger", Message: "This service requires a pre-established SSO session."}})
 		return
 	}
 
-	showLoginForm(w, util.LoginRequestorData{Service: svc, ShowForm: true})
+	showLoginForm(w, util.LoginRequestorData{
+		Config:   config.Get(),
+		Session:  util.LoginRequestorSession{Service: svc},
+		ShowForm: true})
 }
 
 func loginAcceptorHandler(w http.ResponseWriter, r *http.Request) {
@@ -107,35 +118,50 @@ func loginAcceptorHandler(w http.ResponseWriter, r *http.Request) {
 	util.GetPersistence("lt").Remove(bson.M{"_id": tkt.Ticket})
 
 	if lt == "" || tkt.Ticket != lt {
-		showLoginForm(w, util.LoginRequestorData{Service: svc, Type: "danger", Message: "Form submission token was incorrect.", ShowForm: true})
+		showLoginForm(w, util.LoginRequestorData{
+			Config:   config.Get(),
+			Session:  util.LoginRequestorSession{Service: svc},
+			Message:  util.LoginRequestorMessage{Type: "danger", Message: "Form submission token was incorrect."},
+			ShowForm: true})
 		return
 	}
 	if tkt.Validity.Before(time.Now()) {
-		showLoginForm(w, util.LoginRequestorData{Service: svc, Type: "danger", Message: "Form submission token has expired.", ShowForm: true})
+		showLoginForm(w, util.LoginRequestorData{
+			Config:   config.Get(),
+			Session:  util.LoginRequestorSession{Service: svc},
+			Message:  util.LoginRequestorMessage{Type: "danger", Message: "Form submission token has expired."},
+			ShowForm: true})
 		return
 	}
 	if svc != tkt.Service {
-		showLoginForm(w, util.LoginRequestorData{Service: svc, Type: "danger", Message: "Form submission token reused in another context.", ShowForm: true})
+		showLoginForm(w, util.LoginRequestorData{
+			Config:   config.Get(),
+			Session:  util.LoginRequestorSession{Service: svc},
+			Message:  util.LoginRequestorMessage{Type: "danger", Message: "Form submission token reused in another context."},
+			ShowForm: true})
 		return
 	}
 
 	auth := util.AvailableAuthenticators[config.Get().Authenticator]
 	if !auth.Auth(u, p) {
-		showLoginForm(w, util.LoginRequestorData{Service: svc, Type: "danger", Message: "The credential you provided were incorrect.", ShowForm: true})
+		showLoginForm(w, util.LoginRequestorData{
+			Config:   config.Get(),
+			Session:  util.LoginRequestorSession{Service: svc},
+			Message:  util.LoginRequestorMessage{Type: "danger", Message: "The credential you provided were incorrect."},
+			ShowForm: true})
 		return
 	}
 	tgt := ticket.NewTicketGrantingTicket(u, util.GetRemoteAddr(r.RemoteAddr))
 	util.GetPersistence("tgt").Insert(tgt)
 
-	http.SetCookie(w, &http.Cookie{
-		Name:  "CASTGC",
-		Value: tgt.Ticket,
-	})
+	http.SetCookie(w, &http.Cookie{Name: "CASTGC", Value: tgt.Ticket})
 
 	if svc != "" {
 		serveServiceTicket(w, r, tgt.Ticket, svc, false)
 		return
 	}
 
-	showLoginForm(w, util.LoginRequestorData{Service: svc, Username: tgt.Username})
+	showLoginForm(w, util.LoginRequestorData{
+		Config:  config.Get(),
+		Session: util.LoginRequestorSession{Service: svc, Username: tgt.Username}})
 }
