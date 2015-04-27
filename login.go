@@ -78,7 +78,7 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 				serveServiceTicket(w, r, tkt.Ticket, svc)
 				return
 			} else {
-				showLoginForm(w, util.LoginRequestorData{Service: svc, Username: tkt.Username})
+				showLoginForm(w, util.LoginRequestorData{Service: svc, Username: tkt.Username, Logout: util.Url("/logout")})
 				return
 			}
 		}

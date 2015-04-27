@@ -30,7 +30,7 @@
 					{{ if .Username }}
 					<div class="alert alert-success" role="alert">
 		  			<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
-						SSO session open for user <i>{{ .Username }}</i>. <a href="/logout">Logout</a>
+						SSO session open for user <i>{{ .Username }}</i>. <a href="{{ .Logout }}">Logout</a>
 					</div>
 					{{ else if eq .ShowForm true }}
 					<div class="panel panel-primary">

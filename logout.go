@@ -18,6 +18,6 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	w.Header().Add("Location", "/login")
+	w.Header().Add("Location", util.Url("/login"))
 	w.WriteHeader(http.StatusFound)
 }

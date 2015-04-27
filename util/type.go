@@ -14,6 +14,7 @@ type LoginRequestorData struct {
 	Username string
 	ShowForm bool
 	Url      string
+	Logout   string
 }
 
 type CASServiceResponse struct {
