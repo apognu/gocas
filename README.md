@@ -1,6 +1,17 @@
 # GoCAS
 
-Minimalist CAS server in Go.
+Minimalist CAS server in Go. Here what currently works:
+
+* /login into SSO without service
+* subsequent service authentication with previously gotten TGT
+* /login into a service with no prior TGT
+* naive handling of renew parameter (will be enhanced shortly)
+* naive handling of gateway parameter (will be enhanced shortly)
+* logout (no SLO for now)
+* simple whitelisting of exact service URLs
+* /validate and /serviceValidate for service validation (no proxy handling for now)
+
+GoCAS requires a MongoDB service to be available.
 
 ## Configuration
 
