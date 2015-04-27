@@ -1,9 +1,11 @@
 package authenticator
 
+import "strings"
+
 type Dummy struct{}
 
 func (Dummy) Auth(u string, p string) bool {
-	if u == p {
+	if strings.TrimSpace(u) != "" && u == p {
 		return true
 	}
 	return false
