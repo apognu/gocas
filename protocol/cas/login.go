@@ -1,4 +1,4 @@
-package main
+package cas
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/apognu/gocas/authenticator"
 	"github.com/apognu/gocas/config"
 	"github.com/apognu/gocas/ticket"
 	"github.com/apognu/gocas/util"
@@ -142,8 +143,13 @@ func loginAcceptorHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	auth := util.AvailableAuthenticators[config.Get().Authenticator]
-	if !auth.Auth(u, p) {
+	auth, redirect := authenticator.AvailableAuthenticators[config.Get().Authenticator].Auth(u, p)
+	if !auth && redirect != "" {
+		w.Header().Add("Location", redirect)
+		w.WriteHeader(http.StatusFound)
+		return
+	}
+	if !auth {
 		showLoginForm(w, util.LoginRequestorData{
 			Config:   config.Get(),
 			Session:  util.LoginRequestorSession{Service: svc},

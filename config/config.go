@@ -19,12 +19,21 @@ type Config struct {
 		TicketGrantingTicket int `yaml:"ticket_granting_ticket"`
 		ServiceTicket        int `yaml:"service_ticket"`
 	} `yaml:"ticket_validity"`
+	Protocol      string `yaml:"protocol"`
 	Authenticator string `yaml:"authenticator"`
 	Ldap          struct {
 		Host string `yaml:"host"`
 		Base string `yaml:"base"`
 		Dn   string `yaml:"dn"`
 	} `yaml:"ldap"`
+	Oauth struct {
+		ClientID    string   `yaml:"client_id"`
+		Secret      string   `yaml:"secret"`
+		AuthURL     string   `yaml:"auth_url"`
+		TokenURL    string   `yaml:"token_url"`
+		RedirectURL string   `yaml:"redirect_url"`
+		Scopes      []string `yaml:"scopes"`
+	} `yaml:"oauth"`
 }
 
 var c Config

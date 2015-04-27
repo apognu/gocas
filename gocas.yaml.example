@@ -13,6 +13,8 @@ ticket_validity:
   ticket_granting_ticket: 3600
   service_ticket: 30
 
+protocol: cas
+# protocol: oauth
 authenticator: dummy
 # authenticator: ldap
 
@@ -20,3 +22,12 @@ ldap:
 	host: ldap://127.0.0.1
 	base: ou=Users,dc=domain,dc=tld
 	dn: uid
+
+oauth:
+	clientid: XXX
+	secret: XXX
+	auth_url: https://accounts.google.com/o/oauth2/auth
+	token_url: https://accounts.google.com/o/oauth2/token
+	redirect_url: http://localhost:8080/cas/callback
+	scopes:
+		- https://www.googleapis.com/auth/userinfo.profile

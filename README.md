@@ -16,6 +16,11 @@ GoCAS requires a MongoDB service to be available. The available authenticators a
 * Dummy (username should equal password, for testing purposes)
 * LDAP
 
+Also, the following server protocols are supported:
+
+* CAS (duh!)
+* OAuth2
+
 ## Configuration
 
 Exhaustive example of configuration can be found in _gocas.yaml.example_. Location of configuration file can be given with switch _-config_.

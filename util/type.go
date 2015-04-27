@@ -3,7 +3,6 @@ package util
 import (
 	"encoding/xml"
 
-	"github.com/apognu/gocas/authenticator"
 	"github.com/apognu/gocas/config"
 )
 
@@ -72,13 +71,4 @@ func NewCASFailureResponse(c string, msg string) []byte {
 	}
 	x, _ := xml.Marshal(f)
 	return x
-}
-
-type Authenticator interface {
-	Auth(u string, p string) bool
-}
-
-var AvailableAuthenticators = map[string]Authenticator{
-	"dummy": authenticator.Dummy{},
-	"ldap":  authenticator.Ldap{},
 }

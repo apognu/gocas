@@ -4,9 +4,9 @@ import "strings"
 
 type Dummy struct{}
 
-func (Dummy) Auth(u string, p string) bool {
+func (Dummy) Auth(u string, p string) (bool, string) {
 	if strings.TrimSpace(u) != "" && u == p {
-		return true
+		return true, ""
 	}
-	return false
+	return false, ""
 }

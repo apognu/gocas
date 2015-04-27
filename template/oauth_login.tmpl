@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+		<title>Central Authentication Service</title>
+	</head>
+	<body>
+		<div class="container">
+			<div class="row">
+				<div class="col-md-12">
+					<h1>{{ .Config.Title }}</h1>
+				</div>
+			</div>
+
+			{{ if .Session.Username }}
+			<div class="alert alert-success" role="alert">
+		  	<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+				SSO session open for user <i>{{ .Session.Username }}</i>. <a href="{{ .Config.UrlPrefix }}/logout">Logout</a>
+			</div>
+			{{ else }}
+			<div class="panel panel-default">
+  			<div class="panel-heading">External authentication notification</div>
+  			<div class="panel-body">
+    			<p>External authentication is required to access the service, you are about to be redirected to a third-party service.</p>
+    			<p><a href="{{ .Session.Url }}" class="btn btn-primary" role="button">Authenticate with OAuth</a></p>
+  			</div>
+			</div>
+			{{ end }}
+		</div>
+	</body>
+</html>
