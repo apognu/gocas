@@ -1,4 +1,6 @@
 ---
+url_prefix: /cas
+
 mongo:
   host: 172.17.0.1
 

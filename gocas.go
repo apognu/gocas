@@ -20,13 +20,18 @@ func main() {
 
 	util.SetConfig(*config)
 
-	mux := mux.NewRouter()
-	mux.HandleFunc("/login", loginRequestorHandler).Methods("GET")
-	mux.HandleFunc("/login", loginAcceptorHandler).Methods("POST")
-	mux.HandleFunc("/validate", validateHandler).Methods("GET")
-	mux.HandleFunc("/serviceValidate", serviceValidateHandler).Methods("GET")
-	mux.HandleFunc("/logout", logoutHandler).Methods("GET")
+	r := mux.NewRouter()
+	prefix := util.GetConfig().UrlPrefix
+	sr := r
+	if prefix != "" {
+		sr = r.PathPrefix(prefix).Subrouter()
+	}
+	sr.HandleFunc("/login", loginRequestorHandler).Methods("GET")
+	sr.HandleFunc("/login", loginAcceptorHandler).Methods("POST")
+	sr.HandleFunc("/validate", validateHandler).Methods("GET")
+	sr.HandleFunc("/serviceValidate", serviceValidateHandler).Methods("GET")
+	sr.HandleFunc("/logout", logoutHandler).Methods("GET")
 
 	logrus.Infof("started gocas CAS server, %s", time.Now())
-	http.ListenAndServe("0.0.0.0:8080", mux)
+	http.ListenAndServe("0.0.0.0:8080", r)
 }
