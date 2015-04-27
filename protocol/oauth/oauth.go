@@ -107,28 +107,33 @@ func loginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.Header().Add("Location", config.Get().UrlPrefix)
 		w.WriteHeader(http.StatusFound)
+		return
 	}
 
 	cl := oauthConfig.Client(c, token)
-	resp, err := cl.Get("https://www.googleapis.com/oauth2/v1/userinfo?alt=json")
+	resp, err := cl.Get(config.Get().Oauth.UserinfoURL)
 	if err != nil {
 		w.Header().Add("Location", config.Get().UrlPrefix)
 		w.WriteHeader(http.StatusFound)
+		return
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		w.Header().Add("Location", config.Get().UrlPrefix)
 		w.WriteHeader(http.StatusFound)
+		return
 	}
-	var info map[string]string
+	var info map[string]interface{}
 	err = json.Unmarshal(body, &info)
 	if err != nil {
+		fmt.Println(err)
 		w.Header().Add("Location", config.Get().UrlPrefix)
 		w.WriteHeader(http.StatusFound)
+		return
 	}
 
-	tgt := ticket.NewTicketGrantingTicket(info["name"], util.GetRemoteAddr(r.RemoteAddr))
+	tgt := ticket.NewTicketGrantingTicket(info["name"].(string), util.GetRemoteAddr(r.RemoteAddr))
 	util.GetPersistence("tgt").Insert(tgt)
 	http.SetCookie(w, &http.Cookie{Name: "CASTGC", Value: tgt.Ticket, Path: "/"})
 

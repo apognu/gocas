@@ -33,6 +33,7 @@ type Config struct {
 		TokenURL    string   `yaml:"token_url"`
 		RedirectURL string   `yaml:"redirect_url"`
 		Scopes      []string `yaml:"scopes"`
+		UserinfoURL string   `yaml:"userinfo_url"`
 	} `yaml:"oauth"`
 }
 
