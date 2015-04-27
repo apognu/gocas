@@ -25,8 +25,8 @@ func showLoginForm(w http.ResponseWriter, data util.LoginRequestorData) {
 	t.Execute(w, data)
 }
 
-func serveServiceTicket(w http.ResponseWriter, r *http.Request, tgt string, svc string) {
-	st := ticket.NewServiceTicket(tgt, svc)
+func serveServiceTicket(w http.ResponseWriter, r *http.Request, tgt string, svc string, sso bool) {
+	st := ticket.NewServiceTicket(tgt, svc, sso)
 	util.GetPersistence("st").Insert(st)
 
 	url := fmt.Sprintf("%s?ticket=%s", svc, st.Ticket)
@@ -79,7 +79,7 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 		// TGT is valid
 		if tgt.Value == tkt.Ticket && time.Now().Before(tkt.Validity) {
 			if svc != "" {
-				serveServiceTicket(w, r, tkt.Ticket, svc)
+				serveServiceTicket(w, r, tkt.Ticket, svc, true)
 				return
 			} else {
 				showLoginForm(w, util.LoginRequestorData{Service: svc, Username: tkt.Username, Logout: util.Url("/logout")})
@@ -132,7 +132,7 @@ func loginAcceptorHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if svc != "" {
-		serveServiceTicket(w, r, tgt.Ticket, svc)
+		serveServiceTicket(w, r, tgt.Ticket, svc, false)
 		return
 	}
 

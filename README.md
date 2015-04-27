@@ -5,7 +5,7 @@ Minimalist CAS server in Go. Here what currently works:
 * /login into SSO without service
 * subsequent service authentication with previously gotten TGT
 * /login into a service with no prior TGT
-* naive handling of renew parameter (will be enhanced shortly)
+* renew parameter forcing ST to be obtained through principal validation instead of SSO session
 * naive handling of gateway parameter (will be enhanced shortly)
 * logout (no SLO for now)
 * simple whitelisting of exact service URLs

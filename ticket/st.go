@@ -13,9 +13,10 @@ type ServiceTicket struct {
 	Service  string    `bson:"service"`
 	Tgt      string    `bson:"tgt"`
 	Validity time.Time `bson:"validity"`
+	FromSso  bool      `bson:"from_sso"`
 }
 
-func NewServiceTicket(tgt string, svc string) ServiceTicket {
+func NewServiceTicket(tgt string, svc string, sso bool) ServiceTicket {
 	var TicketRunes = []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 	st := make([]rune, 32)
 	for i := range st {
@@ -28,6 +29,7 @@ func NewServiceTicket(tgt string, svc string) ServiceTicket {
 		Tgt:      tgt,
 		Ticket:   "ST-" + string(st),
 		Validity: t,
+		FromSso:  sso,
 	}
 }
 

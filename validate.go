@@ -11,11 +11,16 @@ import (
 
 func validateHandler(w http.ResponseWriter, r *http.Request) {
 	svc, st := r.FormValue("service"), r.FormValue("ticket")
+	renew := r.FormValue("renew")
 
 	var tkt ticket.ServiceTicket
 	util.GetPersistence("st").Find(bson.M{"_id": st, "service": svc}).One(&tkt)
 	util.GetPersistence("st").Remove(bson.M{"_id": st})
 	if tkt.Service != svc || tkt.Ticket != st {
+		w.Write([]byte("no\n"))
+		return
+	}
+	if renew == "true" && tkt.FromSso {
 		w.Write([]byte("no\n"))
 		return
 	}
@@ -26,6 +31,7 @@ func validateHandler(w http.ResponseWriter, r *http.Request) {
 func serviceValidateHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "text/xml")
 	svc, st := r.FormValue("service"), r.FormValue("ticket")
+	renew := r.FormValue("renew")
 
 	if svc == "" || st == "" {
 		w.Write(util.NewCASFailureResponse("INVALID_REQUEST", "Both ticket and service parameters must be given"))
@@ -41,6 +47,10 @@ func serviceValidateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if tkt.Service != svc {
 		w.Write(util.NewCASFailureResponse("INVALID_SERVICE", "Ticket was used for another service than it was generated for"))
+		return
+	}
+	if renew == "true" && tkt.FromSso {
+		w.Write(util.NewCASFailureResponse("INVALID_TICKET_SPEC", "The service requires a service ticket obtained through principal validation"))
 		return
 	}
 
