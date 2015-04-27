@@ -43,7 +43,7 @@ func serveServiceTicket(w http.ResponseWriter, r *http.Request, tgt string, svc 
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	t.Execute(w, util.LoginRequestorData{Config: config.Get(), Session: util.LoginRequestorSession{Service: svc, Username: tkt.Username}})
+	t.Execute(w, util.LoginRequestorData{Config: config.Get(), Session: util.LoginRequestorSession{Service: svc, Username: tkt.Username, Url: url}})
 }
 
 func isServiceWhitelisted(svc string) bool {

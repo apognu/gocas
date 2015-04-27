@@ -16,7 +16,7 @@
   			<div class="panel-heading">Service authentication notification</div>
   			<div class="panel-body">
     			<p>You are about to be authenticated into <b>{{ .Session.Service }}</b> as user <i>{{ .Session.Username }}</i>.</p>
-    			<p><a href="{{ .Service }}" class="btn btn-primary" role="button">Continue</a></p>
+    			<p><a href="{{ .Session.Url }}" class="btn btn-primary" role="button">Continue</a></p>
   			</div>
 			</div>
 		</div>

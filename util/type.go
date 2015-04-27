@@ -17,6 +17,7 @@ type LoginRequestorData struct {
 type LoginRequestorSession struct {
 	Ticket   string
 	Service  string
+	Url      string
 	Username string
 }
 
