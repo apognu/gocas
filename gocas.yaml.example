@@ -1,0 +1,13 @@
+---
+mongo:
+  host: 172.17.0.1
+
+services:
+  - http://127.0.0.1.xip.io:5000
+
+ticket_validity:
+  login_ticket: 120
+  ticket_granting_ticket: 3600
+  service_ticket: 30
+
+authenticator: dummy
