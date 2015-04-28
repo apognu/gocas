@@ -10,7 +10,7 @@ import (
 type Config struct {
 	Title               string `yaml:"title"`
 	UrlPrefix           string `yaml:"url_prefix"`
-	TrustAuthentication bool   `yaml:"trust_authentication"`
+	TrustAuthentication string `yaml:"trust_authentication"`
 	Mongo               struct {
 		Host string `yaml:"host"`
 	} `yaml:"mongo"`

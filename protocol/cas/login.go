@@ -29,6 +29,23 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 	renew, gateway := r.FormValue("renew"), r.FormValue("gateway")
 	lt := ticket.NewLoginTicket(svc)
 
+	tr := authenticator.AvailableAuthenticators["trust"]
+	// Directly create session if trust authentication is enabled and succeeds
+	if config.Get().TrustAuthentication == "always" {
+		if tr != nil {
+			auth, u := tr.Auth(r)
+			if auth {
+				tgt := ticket.NewTicketGrantingTicket(u, util.GetRemoteAddr(r.RemoteAddr))
+				http.SetCookie(w, &http.Cookie{Name: "CASTGC", Value: tgt.Ticket})
+
+				lt.Serve(w, template, util.LoginRequestorData{
+					Config:  config.Get(),
+					Session: util.LoginRequestorSession{Service: svc, Username: tgt.Username}})
+				return
+			}
+		}
+	}
+
 	// The client sent us a TGT, do not display login form
 	if err == nil && renew != "true" {
 		var tkt ticket.TicketGrantingTicket
@@ -52,18 +69,15 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Gateway auth required pre-established SSO session or trust authentication
-	if gateway == "true" && svc != "" {
-		if config.Get().TrustAuthentication {
-			tr := authenticator.AvailableAuthenticators["trust"]
-			if tr != nil {
-				auth, u := tr.Auth(r)
-				if auth {
-					tgt := ticket.NewTicketGrantingTicket(u, util.GetRemoteAddr(r.RemoteAddr))
-					http.SetCookie(w, &http.Cookie{Name: "CASTGC", Value: tgt.Ticket})
-					st := ticket.NewServiceTicket(tgt.Ticket, svc, true)
-					st.Serve(w, r)
-					return
-				}
+	if gateway == "true" && svc != "" && (config.Get().TrustAuthentication == "always" || config.Get().TrustAuthentication == "on-gateway") {
+		if tr != nil {
+			auth, u := tr.Auth(r)
+			if auth {
+				tgt := ticket.NewTicketGrantingTicket(u, util.GetRemoteAddr(r.RemoteAddr))
+				http.SetCookie(w, &http.Cookie{Name: "CASTGC", Value: tgt.Ticket})
+				st := ticket.NewServiceTicket(tgt.Ticket, svc, true)
+				st.Serve(w, r)
+				return
 			}
 		}
 

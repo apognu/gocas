@@ -1,6 +1,8 @@
 ---
 title: GoCAS - Single Sign-On
 url_prefix: /cas
+# trust_authentication: never | on-gateway | always
+trust_authentication: never
 
 mongo:
   host: 172.17.0.1
