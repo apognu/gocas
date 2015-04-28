@@ -2,9 +2,12 @@ package ticket
 
 import (
 	"math/rand"
+	"net/http"
+	"text/template"
 	"time"
 
 	"github.com/apognu/gocas/config"
+	"github.com/apognu/gocas/util"
 )
 
 type LoginTicket struct {
@@ -21,9 +24,26 @@ func NewLoginTicket(svc string) LoginTicket {
 	}
 
 	t := time.Unix(time.Now().Unix()+int64(config.Get().TicketValidity.LoginTicket), 0)
-	return LoginTicket{
+	tkt := LoginTicket{
 		Service:  svc,
 		Ticket:   "LT-" + string(lt),
 		Validity: t,
 	}
+	util.GetPersistence("lt").Insert(tkt)
+	return tkt
+}
+
+func NewEmptyLoginTicket() LoginTicket {
+	return LoginTicket{}
+}
+
+func (lt LoginTicket) Serve(w http.ResponseWriter, tmpl string, data util.LoginRequestorData) {
+	data.Session.Ticket = lt.Ticket
+
+	t, err := template.ParseFiles(tmpl)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	t.Execute(w, data)
 }

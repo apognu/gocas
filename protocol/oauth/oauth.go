@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"text/template"
 	"time"
 
 	"github.com/apognu/gocas/config"
@@ -16,6 +15,8 @@ import (
 	"golang.org/x/oauth2"
 	"gopkg.in/mgo.v2/bson"
 )
+
+const template = "template/oauth_login.tmpl"
 
 var oauthConfig *oauth2.Config
 
@@ -35,28 +36,6 @@ func New(r *mux.Router) {
 	r.HandleFunc("/callback", loginCallbackHandler).Methods("GET")
 }
 
-func showLoginForm(w http.ResponseWriter, data util.LoginRequestorData) {
-	lt := ticket.NewLoginTicket(data.Session.Service)
-	data.Session.Ticket = lt.Ticket
-	util.GetPersistence("lt").Insert(lt)
-
-	t, err := template.ParseFiles("template/oauth_login.tmpl")
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	t.Execute(w, data)
-}
-
-func serveServiceTicket(w http.ResponseWriter, r *http.Request, tgt string, svc string, sso bool) {
-	st := ticket.NewServiceTicket(tgt, svc, sso)
-	util.GetPersistence("st").Insert(st)
-
-	url := fmt.Sprintf("%s?ticket=%s", svc, st.Ticket)
-	w.Header().Add("Location", url)
-	w.WriteHeader(http.StatusFound)
-}
-
 func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 	svc := r.FormValue("service")
 	tgt, err := r.Cookie("CASTGC")
@@ -67,10 +46,12 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 		// TGT is valid
 		if tgt.Value == tkt.Ticket && time.Now().Before(tkt.Validity) {
 			if svc != "" {
-				serveServiceTicket(w, r, tkt.Ticket, svc, true)
+				st := ticket.NewServiceTicket(tkt.Ticket, svc, true)
+				st.Serve(w, r)
 				return
 			} else {
-				showLoginForm(w, util.LoginRequestorData{
+				lt := ticket.NewLoginTicket(svc)
+				lt.Serve(w, template, util.LoginRequestorData{
 					Config:  config.Get(),
 					Session: util.LoginRequestorSession{Service: svc, Username: tkt.Username}})
 				return
@@ -79,14 +60,10 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	lt := ticket.NewLoginTicket(svc)
-	util.GetPersistence("lt").Insert(lt)
 	url := oauthConfig.AuthCodeURL(lt.Ticket)
-	t, err := template.ParseFiles("template/oauth_login.tmpl")
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	t.Execute(w, util.LoginRequestorData{Config: config.Get(), Session: util.LoginRequestorSession{Url: url}})
+	lt.Serve(w, template, util.LoginRequestorData{
+		Config:  config.Get(),
+		Session: util.LoginRequestorSession{Url: url}})
 }
 
 func loginCallbackHandler(w http.ResponseWriter, r *http.Request) {
@@ -96,7 +73,8 @@ func loginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	util.GetPersistence("lt").Find(bson.M{"_id": lt}).One(&tkt)
 	util.GetPersistence("lt").Remove(bson.M{"_id": tkt.Ticket})
 	if lt == "" || tkt.Ticket != lt {
-		showLoginForm(w, util.LoginRequestorData{
+		lt := ticket.NewLoginTicket(tkt.Service)
+		lt.Serve(w, template, util.LoginRequestorData{
 			Config:  config.Get(),
 			Message: util.LoginRequestorMessage{Type: "danger", Message: "Form submission token was incorrect."}})
 		return
@@ -138,7 +116,8 @@ func loginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{Name: "CASTGC", Value: tgt.Ticket, Path: "/"})
 
 	if tkt.Service != "" {
-		serveServiceTicket(w, r, tgt.Ticket, tkt.Service, false)
+		st := ticket.NewServiceTicket(tkt.Ticket, tkt.Service, false)
+		st.Serve(w, r)
 		return
 	}
 

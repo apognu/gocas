@@ -1,10 +1,7 @@
 package cas
 
 import (
-	"fmt"
 	"net/http"
-	"net/url"
-	"text/template"
 	"time"
 
 	"github.com/apognu/gocas/authenticator"
@@ -14,68 +11,13 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-func showLoginForm(w http.ResponseWriter, data util.LoginRequestorData) {
-	lt := ticket.NewLoginTicket(data.Session.Service)
-	data.Session.Ticket = lt.Ticket
-	util.GetPersistence("lt").Insert(lt)
-
-	t, err := template.ParseFiles("template/login.tmpl")
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	t.Execute(w, data)
-}
-
-func serveServiceTicket(w http.ResponseWriter, r *http.Request, tgt string, svc string, sso bool) {
-	st := ticket.NewServiceTicket(tgt, svc, sso)
-	util.GetPersistence("st").Insert(st)
-
-	url := fmt.Sprintf("%s?ticket=%s", svc, st.Ticket)
-	if r.FormValue("warn") != "true" {
-		w.Header().Add("Location", url)
-		w.WriteHeader(http.StatusFound)
-		return
-	}
-
-	tkt := st.GetTicketGrantingTicket()
-	t, err := template.ParseFiles("template/warn.tmpl")
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	t.Execute(w, util.LoginRequestorData{Config: config.Get(), Session: util.LoginRequestorSession{Service: svc, Username: tkt.Username, Url: url}})
-}
-
-func isServiceWhitelisted(svc string) bool {
-	if svc != "" && len(config.Get().Services) > 0 {
-		matched := false
-		u, err := url.Parse(svc)
-		if err == nil {
-			for _, s := range config.Get().Services {
-				if s == u.Host {
-					matched = true
-				}
-			}
-		}
-		return matched
-	}
-	return true
-}
+const template = "template/login.tmpl"
 
 func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 	tgt, err := r.Cookie("CASTGC")
 	svc := r.FormValue("service")
 	renew, gateway := r.FormValue("renew"), r.FormValue("gateway")
-
-	if !isServiceWhitelisted(svc) {
-		showLoginForm(w, util.LoginRequestorData{
-			Config:   config.Get(),
-			Session:  util.LoginRequestorSession{Service: svc},
-			Message:  util.LoginRequestorMessage{Type: "danger", Message: fmt.Sprintf("Service <b>%s</b> is not allowed to use the SSO.", svc)},
-			ShowForm: false})
-		return
-	}
+	lt := ticket.NewLoginTicket(svc)
 
 	// The client sent us a TGT, do not display login form
 	if err == nil && renew != "true" {
@@ -85,10 +27,11 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 		// TGT is valid
 		if tgt.Value == tkt.Ticket && time.Now().Before(tkt.Validity) {
 			if svc != "" {
-				serveServiceTicket(w, r, tkt.Ticket, svc, true)
+				st := ticket.NewServiceTicket(tkt.Ticket, svc, true)
+				st.Serve(w, r)
 				return
 			} else {
-				showLoginForm(w, util.LoginRequestorData{
+				lt.Serve(w, template, util.LoginRequestorData{
 					Config:  config.Get(),
 					Session: util.LoginRequestorSession{Service: svc, Username: tkt.Username}})
 				return
@@ -97,13 +40,14 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if gateway == "true" {
-		showLoginForm(w, util.LoginRequestorData{
+		w.WriteHeader(http.StatusForbidden)
+		lt.Serve(w, template, util.LoginRequestorData{
 			Config:  config.Get(),
 			Message: util.LoginRequestorMessage{Type: "danger", Message: "This service requires a pre-established SSO session."}})
 		return
 	}
 
-	showLoginForm(w, util.LoginRequestorData{
+	lt.Serve(w, template, util.LoginRequestorData{
 		Config:   config.Get(),
 		Session:  util.LoginRequestorSession{Service: svc},
 		ShowForm: true})
@@ -119,7 +63,9 @@ func loginAcceptorHandler(w http.ResponseWriter, r *http.Request) {
 	util.GetPersistence("lt").Remove(bson.M{"_id": tkt.Ticket})
 
 	if lt == "" || tkt.Ticket != lt {
-		showLoginForm(w, util.LoginRequestorData{
+		lt := ticket.NewLoginTicket(svc)
+		w.WriteHeader(http.StatusForbidden)
+		lt.Serve(w, template, util.LoginRequestorData{
 			Config:   config.Get(),
 			Session:  util.LoginRequestorSession{Service: svc},
 			Message:  util.LoginRequestorMessage{Type: "danger", Message: "Form submission token was incorrect."},
@@ -127,7 +73,9 @@ func loginAcceptorHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if tkt.Validity.Before(time.Now()) {
-		showLoginForm(w, util.LoginRequestorData{
+		lt := ticket.NewLoginTicket(svc)
+		w.WriteHeader(http.StatusForbidden)
+		lt.Serve(w, template, util.LoginRequestorData{
 			Config:   config.Get(),
 			Session:  util.LoginRequestorSession{Service: svc},
 			Message:  util.LoginRequestorMessage{Type: "danger", Message: "Form submission token has expired."},
@@ -135,7 +83,9 @@ func loginAcceptorHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if svc != tkt.Service {
-		showLoginForm(w, util.LoginRequestorData{
+		lt := ticket.NewLoginTicket(svc)
+		w.WriteHeader(http.StatusForbidden)
+		lt.Serve(w, template, util.LoginRequestorData{
 			Config:   config.Get(),
 			Session:  util.LoginRequestorSession{Service: svc},
 			Message:  util.LoginRequestorMessage{Type: "danger", Message: "Form submission token reused in another context."},
@@ -150,7 +100,9 @@ func loginAcceptorHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !auth {
-		showLoginForm(w, util.LoginRequestorData{
+		lt := ticket.NewLoginTicket(svc)
+		w.WriteHeader(http.StatusForbidden)
+		lt.Serve(w, template, util.LoginRequestorData{
 			Config:   config.Get(),
 			Session:  util.LoginRequestorSession{Service: svc},
 			Message:  util.LoginRequestorMessage{Type: "danger", Message: "The credential you provided were incorrect."},
@@ -163,11 +115,13 @@ func loginAcceptorHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{Name: "CASTGC", Value: tgt.Ticket})
 
 	if svc != "" {
-		serveServiceTicket(w, r, tgt.Ticket, svc, false)
+		st := ticket.NewServiceTicket(tkt.Ticket, svc, false)
+		st.Serve(w, r)
 		return
 	}
 
-	showLoginForm(w, util.LoginRequestorData{
+	nlt := ticket.NewLoginTicket(svc)
+	nlt.Serve(w, template, util.LoginRequestorData{
 		Config:  config.Get(),
 		Session: util.LoginRequestorSession{Service: svc, Username: tgt.Username}})
 }
