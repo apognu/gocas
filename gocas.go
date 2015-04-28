@@ -15,11 +15,16 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type Protocol func(*mux.Router)
+
+var AvailableProtocols = map[string]Protocol{
+	"cas":   cas.New,
+	"oauth": oauth.New,
+}
+
 var (
 	c = flag.String("config", "/etc/gocas.yaml", "path to GoCAS configuration file")
 )
-
-type Protocol func(*mux.Router)
 
 func redirect(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Location", util.Url("/login"))
@@ -30,9 +35,11 @@ func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	config.Set(*c)
-	var protocols = map[string]Protocol{
-		"cas":   cas.New,
-		"oauth": oauth.New,
+	if AvailableProtocols[config.Get().Protocol] == nil {
+		logrus.Fatalf("unknown protocol: %s", config.Get().Protocol)
+	}
+	if authenticator.AvailableAuthenticators[config.Get().Authenticator] == nil {
+		logrus.Fatalf("unknown authenticator: %s", config.Get().Authenticator)
 	}
 
 	r := mux.NewRouter().StrictSlash(true)
@@ -54,15 +61,11 @@ func main() {
 		sr.HandleFunc("/v1/tickets/{ticket}", restLogoutHandler).Methods("DELETE")
 	}
 
-	if protocols[config.Get().Protocol] == nil {
-		logrus.Fatalf("cannot find configured protocol: %s", config.Get().Protocol)
-	}
-	if authenticator.AvailableAuthenticators[config.Get().Authenticator] == nil {
-		logrus.Fatalf("cannot find configured authenticator: %s", config.Get().Authenticator)
-	}
-
-	protocols[config.Get().Protocol](sr)
+	AvailableProtocols[config.Get().Protocol](sr)
 
 	logrus.Infof("started gocas CAS server, %s", time.Now())
-	http.ListenAndServe("0.0.0.0:8080", r)
+	err := http.ListenAndServe(config.Get().Listen, r)
+	if err != nil {
+		logrus.Errorf("could not listen: %s", err)
+	}
 }

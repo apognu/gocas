@@ -7,7 +7,7 @@ import (
 )
 
 type LoginRequestorData struct {
-	Config   config.Config
+	Config   *config.Config
 	Session  LoginRequestorSession
 	Message  LoginRequestorMessage
 	ShowForm bool

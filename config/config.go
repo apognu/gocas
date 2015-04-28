@@ -2,6 +2,7 @@ package config
 
 import (
 	"io/ioutil"
+	"net/url"
 
 	"github.com/Sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -13,6 +14,7 @@ type Config struct {
 	UrlPrefix           string `yaml:"url_prefix"`
 	RestApi             bool   `yaml:"rest_api"`
 	TrustAuthentication string `yaml:"trust_authentication"`
+	Listen              string `yaml:"listen"`
 	Mongo               struct {
 		Host string `yaml:"host"`
 	} `yaml:"mongo"`
@@ -40,9 +42,9 @@ type Config struct {
 	} `yaml:"oauth"`
 }
 
-var c Config
+var c *Config
 
-func Get() Config {
+func Get() *Config {
 	return c
 }
 
@@ -54,5 +56,20 @@ func Set(p string) {
 	err = yaml.Unmarshal(f, &c)
 	if err != nil {
 		logrus.Fatalf("error parsing configuration file: %s", err)
+	}
+
+	u, err := url.Parse(Get().Url)
+	if err != nil {
+		logrus.Fatalf("cannot parse base URL: %s", Get().Url)
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		logrus.Fatalf("only schemes 'http' and 'https' are supported: %s", Get().Url)
+	}
+	u.Path, u.RawQuery = "", ""
+	logrus.Infof("normalizing base URL to %s", u)
+	Get().Url = u.String()
+
+	if Get().TrustAuthentication != "" && Get().TrustAuthentication != "on-gateway" && Get().TrustAuthentication != "always" && Get().TrustAuthentication != "never" {
+		logrus.Fatalf("setting 'trust_authentication' should be 'never', 'on-gateway' or 'always'")
 	}
 }

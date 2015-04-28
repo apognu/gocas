@@ -1,9 +1,12 @@
 ---
 title: GoCAS - Single Sign-On
+url: http://localhost:8080
 url_prefix: /cas
 rest_api: false
 # trust_authentication: never | on-gateway | always
 trust_authentication: never
+
+listen: 127.0.0.1:8080
 
 mongo:
   host: 172.17.0.1
