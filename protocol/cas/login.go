@@ -37,10 +37,12 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 		// TGT is valid
 		if tgt.Value == tkt.Ticket && time.Now().Before(tkt.Validity) {
 			if svc != "" {
+				// Service ID was provided, generate ST and redirect
 				st := ticket.NewServiceTicket(tkt.Ticket, svc, true)
 				st.Serve(w, r)
 				return
 			} else {
+				// No service ID, display successfull login screen
 				lt.Serve(w, template, util.LoginRequestorData{
 					Config:  config.Get(),
 					Session: util.LoginRequestorSession{Service: svc, Username: tkt.Username}})
@@ -49,6 +51,7 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Gateway auth required pre-established SSO session or [TODO] trust authentication
 	if gateway == "true" {
 		w.WriteHeader(http.StatusForbidden)
 		lt.Serve(w, template, util.LoginRequestorData{
@@ -57,6 +60,7 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// No ST, no TGT, display login form
 	lt.Serve(w, template, util.LoginRequestorData{
 		Config:   config.Get(),
 		Session:  util.LoginRequestorSession{Service: svc},
@@ -66,47 +70,45 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 func loginAcceptorHandler(w http.ResponseWriter, r *http.Request) {
 	svc := r.FormValue("service")
 	lt := r.FormValue("lt")
-	u, p := r.FormValue("username"), r.FormValue("password")
 
 	var tkt ticket.LoginTicket
 	util.GetPersistence("lt").Find(bson.M{"_id": lt}).One(&tkt)
 	util.GetPersistence("lt").Remove(bson.M{"_id": tkt.Ticket})
 
+	// LT is missing or is unknown
 	if lt == "" || tkt.Ticket != lt {
 		forbidden(w, svc, "Form submission token was incorrect.")
 		return
 	}
+	// LT has expired
 	if tkt.Validity.Before(time.Now()) {
 		forbidden(w, svc, "Form submission token has expired.")
 		return
 	}
+	// LT was created for another service
 	if svc != tkt.Service {
 		forbidden(w, svc, "Form submission token reused in another context.")
 		return
 	}
 
-	auth, redirect := authenticator.AvailableAuthenticators[config.Get().Authenticator].Auth(u, p)
-	if !auth && redirect != "" {
-		w.Header().Add("Location", redirect)
-		w.WriteHeader(http.StatusFound)
-		return
-	}
+	auth, u := authenticator.AvailableAuthenticators[config.Get().Authenticator].Auth(r)
 	if !auth {
 		forbidden(w, svc, "The credential you provided were incorrect.")
 		return
 	}
-	tgt := ticket.NewTicketGrantingTicket(u, util.GetRemoteAddr(r.RemoteAddr))
-	util.GetPersistence("tgt").Insert(tgt)
 
+	tgt := ticket.NewTicketGrantingTicket(u, util.GetRemoteAddr(r.RemoteAddr))
 	http.SetCookie(w, &http.Cookie{Name: "CASTGC", Value: tgt.Ticket})
 
+	// Session established and service required, create ST and redirect
 	if svc != "" {
 		st := ticket.NewServiceTicket(tkt.Ticket, svc, false)
 		st.Serve(w, r)
 		return
 	}
 
-	nlt := ticket.NewLoginTicket(svc)
+	// SSO session opened, no service requested
+	nlt := ticket.NewEmptyLoginTicket()
 	nlt.Serve(w, template, util.LoginRequestorData{
 		Config:  config.Get(),
 		Session: util.LoginRequestorSession{Service: svc, Username: tgt.Username}})

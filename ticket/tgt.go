@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/apognu/gocas/config"
+	"github.com/apognu/gocas/util"
 )
 
 type TicketGrantingTicket struct {
@@ -22,10 +23,12 @@ func NewTicketGrantingTicket(u string, ip string) TicketGrantingTicket {
 	}
 
 	t := time.Unix(time.Now().Unix()+int64(config.Get().TicketValidity.TicketGrantingTicket), 0)
-	return TicketGrantingTicket{
+	tkt := TicketGrantingTicket{
 		Ticket:   "TGT-" + string(tgt),
 		Username: u,
 		ClientIP: ip,
 		Validity: t,
 	}
+	util.GetPersistence("tgt").Insert(tkt)
+	return tkt
 }

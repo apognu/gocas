@@ -1,12 +1,16 @@
 package authenticator
 
-import "strings"
+import (
+	"net/http"
+	"strings"
+)
 
 type Dummy struct{}
 
-func (Dummy) Auth(u string, p string) (bool, string) {
+func (Dummy) Auth(r *http.Request) (bool, string) {
+	u, p := r.FormValue("username"), r.FormValue("password")
 	if strings.TrimSpace(u) != "" && u == p {
-		return true, ""
+		return true, u
 	}
 	return false, ""
 }

@@ -1,7 +1,9 @@
 package authenticator
 
+import "net/http"
+
 type Authenticator interface {
-	Auth(u string, p string) (bool, string)
+	Auth(*http.Request) (bool, string)
 }
 
 var AvailableAuthenticators = map[string]Authenticator{

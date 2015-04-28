@@ -2,6 +2,7 @@ package authenticator
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/apognu/gocas/config"
@@ -10,7 +11,8 @@ import (
 
 type Ldap struct{}
 
-func (Ldap) Auth(u string, p string) (bool, string) {
+func (Ldap) Auth(r *http.Request) (bool, string) {
+	u, p := r.FormValue("username"), r.FormValue("password")
 	ldap, err := openldap.Initialize(config.Get().Ldap.Host)
 	if err != nil {
 		logrus.Errorf("cannot connect to LDAP server: %s", err)
@@ -23,5 +25,5 @@ func (Ldap) Auth(u string, p string) (bool, string) {
 		return false, ""
 	}
 	ldap.Close()
-	return true, ""
+	return true, u
 }
