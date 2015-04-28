@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/apognu/gocas/authenticator"
 	"github.com/apognu/gocas/config"
 	"github.com/apognu/gocas/protocol/cas"
 	"github.com/apognu/gocas/protocol/oauth"
@@ -45,6 +46,12 @@ func main() {
 	sr.HandleFunc("/serviceValidate", serviceValidateHandler).Methods("GET")
 	sr.HandleFunc("/logout", logoutHandler).Methods("GET")
 
+	if protocols[config.Get().Protocol] == nil {
+		logrus.Fatalf("cannot find configured protocol: %s", config.Get().Protocol)
+	}
+	if authenticator.AvailableAuthenticators[config.Get().Authenticator] == nil {
+		logrus.Fatalf("cannot find configured authenticator: %s", config.Get().Authenticator)
+	}
 	protocols[config.Get().Protocol](sr)
 
 	logrus.Infof("started gocas CAS server, %s", time.Now())
