@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
-	Title     string `yaml:"title"`
-	UrlPrefix string `yaml:"url_prefix"`
-	Mongo     struct {
+	Title               string `yaml:"title"`
+	UrlPrefix           string `yaml:"url_prefix"`
+	TrustAuthentication bool   `yaml:"trust_authentication"`
+	Mongo               struct {
 		Host string `yaml:"host"`
 	} `yaml:"mongo"`
 	Services       []string `yaml:"services"`

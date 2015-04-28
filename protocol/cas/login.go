@@ -51,8 +51,22 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Gateway auth required pre-established SSO session or [TODO] trust authentication
-	if gateway == "true" {
+	// Gateway auth required pre-established SSO session or trust authentication
+	if gateway == "true" && svc != "" {
+		if config.Get().TrustAuthentication {
+			tr := authenticator.AvailableAuthenticators["trust"]
+			if tr != nil {
+				auth, u := tr.Auth(r)
+				if auth {
+					tgt := ticket.NewTicketGrantingTicket(u, util.GetRemoteAddr(r.RemoteAddr))
+					http.SetCookie(w, &http.Cookie{Name: "CASTGC", Value: tgt.Ticket})
+					st := ticket.NewServiceTicket(tgt.Ticket, svc, true)
+					st.Serve(w, r)
+					return
+				}
+			}
+		}
+
 		w.WriteHeader(http.StatusForbidden)
 		lt.Serve(w, template, util.LoginRequestorData{
 			Config:  config.Get(),

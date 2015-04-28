@@ -9,4 +9,5 @@ type Authenticator interface {
 var AvailableAuthenticators = map[string]Authenticator{
 	"dummy": Dummy{},
 	"ldap":  Ldap{},
+	"trust": Trust{},
 }
