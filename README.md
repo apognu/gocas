@@ -11,6 +11,7 @@ Minimalist CAS server in Go. Here what currently works:
 * logout (no SLO for now)
 * simple whitelisting of exact service hosts
 * /validate and /serviceValidate for service validation (no proxy handling for now)
+* REST API (no CAS proxy)
 
 GoCAS requires a MongoDB service to be available. The available authenticators are :
 

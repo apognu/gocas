@@ -37,14 +37,22 @@ func main() {
 
 	r := mux.NewRouter().StrictSlash(true)
 	r.HandleFunc("/", redirect)
+
 	sr := r
 	if config.Get().UrlPrefix != "" {
 		sr = r.PathPrefix(config.Get().UrlPrefix).Subrouter()
 		sr.HandleFunc("/", redirect)
 	}
+
 	sr.HandleFunc("/validate", validateHandler).Methods("GET")
 	sr.HandleFunc("/serviceValidate", serviceValidateHandler).Methods("GET")
 	sr.HandleFunc("/logout", logoutHandler).Methods("GET")
+
+	if config.Get().RestApi {
+		sr.HandleFunc("/v1/tickets", restGetTicketGrantingTicketHandler).Methods("POST")
+		sr.HandleFunc("/v1/tickets/{ticket}", restGetServiceTicketHandler).Methods("POST")
+		sr.HandleFunc("/v1/tickets/{ticket}", restLogoutHandler).Methods("DELETE")
+	}
 
 	if protocols[config.Get().Protocol] == nil {
 		logrus.Fatalf("cannot find configured protocol: %s", config.Get().Protocol)
@@ -52,6 +60,7 @@ func main() {
 	if authenticator.AvailableAuthenticators[config.Get().Authenticator] == nil {
 		logrus.Fatalf("cannot find configured authenticator: %s", config.Get().Authenticator)
 	}
+
 	protocols[config.Get().Protocol](sr)
 
 	logrus.Infof("started gocas CAS server, %s", time.Now())

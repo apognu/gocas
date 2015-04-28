@@ -9,7 +9,9 @@ import (
 
 type Config struct {
 	Title               string `yaml:"title"`
+	Url                 string `yaml:"url"`
 	UrlPrefix           string `yaml:"url_prefix"`
+	RestApi             bool   `yaml:"rest_api"`
 	TrustAuthentication string `yaml:"trust_authentication"`
 	Mongo               struct {
 		Host string `yaml:"host"`

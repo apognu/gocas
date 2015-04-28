@@ -1,6 +1,7 @@
 ---
 title: GoCAS - Single Sign-On
 url_prefix: /cas
+rest_api: false
 # trust_authentication: never | on-gateway | always
 trust_authentication: never
 
