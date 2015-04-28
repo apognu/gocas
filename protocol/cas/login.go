@@ -13,6 +13,16 @@ import (
 
 const template = "template/login.tmpl"
 
+func forbidden(w http.ResponseWriter, svc string, msg string) {
+	lt := ticket.NewLoginTicket(svc)
+	w.WriteHeader(http.StatusForbidden)
+	lt.Serve(w, template, util.LoginRequestorData{
+		Config:   config.Get(),
+		Session:  util.LoginRequestorSession{Service: svc},
+		Message:  util.LoginRequestorMessage{Type: "danger", Message: msg},
+		ShowForm: true})
+}
+
 func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 	tgt, err := r.Cookie("CASTGC")
 	svc := r.FormValue("service")
@@ -63,33 +73,15 @@ func loginAcceptorHandler(w http.ResponseWriter, r *http.Request) {
 	util.GetPersistence("lt").Remove(bson.M{"_id": tkt.Ticket})
 
 	if lt == "" || tkt.Ticket != lt {
-		lt := ticket.NewLoginTicket(svc)
-		w.WriteHeader(http.StatusForbidden)
-		lt.Serve(w, template, util.LoginRequestorData{
-			Config:   config.Get(),
-			Session:  util.LoginRequestorSession{Service: svc},
-			Message:  util.LoginRequestorMessage{Type: "danger", Message: "Form submission token was incorrect."},
-			ShowForm: true})
+		forbidden(w, svc, "Form submission token was incorrect.")
 		return
 	}
 	if tkt.Validity.Before(time.Now()) {
-		lt := ticket.NewLoginTicket(svc)
-		w.WriteHeader(http.StatusForbidden)
-		lt.Serve(w, template, util.LoginRequestorData{
-			Config:   config.Get(),
-			Session:  util.LoginRequestorSession{Service: svc},
-			Message:  util.LoginRequestorMessage{Type: "danger", Message: "Form submission token has expired."},
-			ShowForm: true})
+		forbidden(w, svc, "Form submission token has expired.")
 		return
 	}
 	if svc != tkt.Service {
-		lt := ticket.NewLoginTicket(svc)
-		w.WriteHeader(http.StatusForbidden)
-		lt.Serve(w, template, util.LoginRequestorData{
-			Config:   config.Get(),
-			Session:  util.LoginRequestorSession{Service: svc},
-			Message:  util.LoginRequestorMessage{Type: "danger", Message: "Form submission token reused in another context."},
-			ShowForm: true})
+		forbidden(w, svc, "Form submission token reused in another context.")
 		return
 	}
 
@@ -100,13 +92,7 @@ func loginAcceptorHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !auth {
-		lt := ticket.NewLoginTicket(svc)
-		w.WriteHeader(http.StatusForbidden)
-		lt.Serve(w, template, util.LoginRequestorData{
-			Config:   config.Get(),
-			Session:  util.LoginRequestorSession{Service: svc},
-			Message:  util.LoginRequestorMessage{Type: "danger", Message: "The credential you provided were incorrect."},
-			ShowForm: true})
+		forbidden(w, svc, "The credential you provided were incorrect.")
 		return
 	}
 	tgt := ticket.NewTicketGrantingTicket(u, util.GetRemoteAddr(r.RemoteAddr))
