@@ -47,3 +47,4 @@ oauth:
 		- https://www.googleapis.com/auth/userinfo.profile
 	# Should return a JSON hash with a name key
 	userinfo_url: https://www.googleapis.com/oauth2/v1/userinfo?alt=json
+	username_attribute: name

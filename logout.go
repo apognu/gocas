@@ -13,7 +13,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 		util.GetPersistence("tgt").Remove(bson.M{"_id": tgt.Value})
 		http.SetCookie(w, &http.Cookie{
 			Name:   "CASTGC",
-			Value:  "",
+			Path:   "/",
 			MaxAge: -1,
 		})
 	}

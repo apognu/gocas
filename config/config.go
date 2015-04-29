@@ -38,13 +38,14 @@ type Config struct {
 		Dn   string `yaml:"dn"`
 	} `yaml:"ldap"`
 	Oauth struct {
-		ClientID    string   `yaml:"client_id"`
-		Secret      string   `yaml:"secret"`
-		AuthURL     string   `yaml:"auth_url"`
-		TokenURL    string   `yaml:"token_url"`
-		RedirectURL string   `yaml:"redirect_url"`
-		Scopes      []string `yaml:"scopes"`
-		UserinfoURL string   `yaml:"userinfo_url"`
+		ClientID          string   `yaml:"client_id"`
+		Secret            string   `yaml:"secret"`
+		AuthURL           string   `yaml:"auth_url"`
+		TokenURL          string   `yaml:"token_url"`
+		RedirectURL       string   `yaml:"redirect_url"`
+		Scopes            []string `yaml:"scopes"`
+		UserinfoURL       string   `yaml:"userinfo_url"`
+		UsernameAttribute string   `yaml:"username_attribute"`
 	} `yaml:"oauth"`
 }
 

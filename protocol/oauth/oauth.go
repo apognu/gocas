@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/apognu/gocas/config"
 	"github.com/apognu/gocas/ticket"
 	"github.com/apognu/gocas/util"
@@ -55,7 +56,7 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 					Session: util.LoginRequestorSession{Service: svc, Username: tkt.Username}})
 				return
 			}
-		} else {
+		} else if tgt.Value != "" {
 			util.IncrementFailedLogin(r.RemoteAddr, "")
 		}
 	}
@@ -65,6 +66,13 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 	lt.Serve(w, template, util.LoginRequestorData{
 		Config:  config.Get(),
 		Session: util.LoginRequestorSession{Url: url}})
+}
+
+func oauthFailed(w http.ResponseWriter) {
+	logrus.Errorf("OAuth authentication failed for some reason")
+
+	w.Header().Add("Location", config.Get().UrlPrefix)
+	w.WriteHeader(http.StatusFound)
 }
 
 func loginCallbackHandler(w http.ResponseWriter, r *http.Request) {
@@ -87,35 +95,36 @@ func loginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	token, err := oauthConfig.Exchange(c, code)
 	if err != nil {
 		util.IncrementFailedLogin(r.RemoteAddr, "")
-
-		w.Header().Add("Location", config.Get().UrlPrefix)
-		w.WriteHeader(http.StatusFound)
+		oauthFailed(w)
 		return
 	}
 
 	cl := oauthConfig.Client(c, token)
 	resp, err := cl.Get(config.Get().Oauth.UserinfoURL)
 	if err != nil {
-		w.Header().Add("Location", config.Get().UrlPrefix)
-		w.WriteHeader(http.StatusFound)
+		oauthFailed(w)
 		return
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		w.Header().Add("Location", config.Get().UrlPrefix)
-		w.WriteHeader(http.StatusFound)
+		oauthFailed(w)
 		return
 	}
 	var info map[string]interface{}
 	err = json.Unmarshal(body, &info)
 	if err != nil {
-		w.Header().Add("Location", config.Get().UrlPrefix)
-		w.WriteHeader(http.StatusFound)
+		oauthFailed(w)
 		return
 	}
 
-	tgt := ticket.NewTicketGrantingTicket(info["name"].(string), util.GetRemoteAddr(r.RemoteAddr))
+	if info[config.Get().Oauth.UsernameAttribute] == nil {
+		logrus.Errorf("OAuth response does not container '%s' attribute", config.Get().Oauth.UsernameAttribute)
+		oauthFailed(w)
+		return
+	}
+
+	tgt := ticket.NewTicketGrantingTicket(info[config.Get().Oauth.UsernameAttribute].(string), util.GetRemoteAddr(r.RemoteAddr))
 	util.GetPersistence("tgt").Insert(tgt)
 	http.SetCookie(w, &http.Cookie{Name: "CASTGC", Value: tgt.Ticket, Path: "/"})
 
