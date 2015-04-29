@@ -65,6 +65,8 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 					Session: util.LoginRequestorSession{Service: svc, Username: tkt.Username}})
 				return
 			}
+		} else {
+			util.IncrementFailedLogin(r.RemoteAddr, "")
 		}
 	}
 
@@ -105,22 +107,26 @@ func loginAcceptorHandler(w http.ResponseWriter, r *http.Request) {
 
 	// LT is missing or is unknown
 	if lt == "" || tkt.Ticket != lt {
+		util.IncrementFailedLogin(r.RemoteAddr, "")
 		forbidden(w, svc, "Form submission token was incorrect.")
 		return
 	}
 	// LT has expired
 	if tkt.Validity.Before(time.Now()) {
+		util.IncrementFailedLogin(r.RemoteAddr, "")
 		forbidden(w, svc, "Form submission token has expired.")
 		return
 	}
 	// LT was created for another service
 	if svc != tkt.Service {
+		util.IncrementFailedLogin(r.RemoteAddr, "")
 		forbidden(w, svc, "Form submission token reused in another context.")
 		return
 	}
 
 	auth, u := authenticator.AvailableAuthenticators[config.Get().Authenticator].Auth(r)
 	if !auth {
+		util.IncrementFailedLogin(r.RemoteAddr, u)
 		forbidden(w, svc, "The credential you provided were incorrect.")
 		return
 	}

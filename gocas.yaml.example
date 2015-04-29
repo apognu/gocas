@@ -11,6 +11,14 @@ listen: 127.0.0.1:8080
 mongo:
   host: 172.17.0.1
 
+#middlewares:
+#	- throttling
+
+throttling:
+  max_failures_by_ip: 5
+  max_failures_by_username: 5
+  decrement_interval: 1m
+
 services:
   - http://127.0.0.1.xip.io:5000
 

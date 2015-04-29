@@ -2,6 +2,7 @@ package util
 
 import (
 	"encoding/xml"
+	"time"
 
 	"github.com/apognu/gocas/config"
 )
@@ -23,6 +24,14 @@ type LoginRequestorSession struct {
 type LoginRequestorMessage struct {
 	Type    string
 	Message string
+}
+
+type FailedLogin struct {
+	Id        string    `bson:"_id"`
+	Ip        string    `bson:"ip,omitempty"`
+	Username  string    `bson:"username,omitempty"`
+	Count     uint      `bson:"count"`
+	UpdatedAt time.Time `bson:"updated_at"`
 }
 
 type CASServiceResponse struct {

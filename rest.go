@@ -20,6 +20,7 @@ func restGetTicketGrantingTicketHandler(w http.ResponseWriter, r *http.Request) 
 
 	auth, u := authenticator.AvailableAuthenticators[config.Get().Authenticator].Auth(r)
 	if !auth {
+		util.IncrementFailedLogin(r.RemoteAddr, "")
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
@@ -34,6 +35,7 @@ func restGetServiceTicketHandler(w http.ResponseWriter, r *http.Request) {
 	svc := r.FormValue("service")
 
 	if tgt == "" || svc == "" {
+		util.IncrementFailedLogin(r.RemoteAddr, "")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -41,12 +43,14 @@ func restGetServiceTicketHandler(w http.ResponseWriter, r *http.Request) {
 	var tkt ticket.TicketGrantingTicket
 	util.GetPersistence("tgt").Find(bson.M{"_id": tgt, "client_ip": util.GetRemoteAddr(r.RemoteAddr)}).One(&tkt)
 	if tgt != tkt.Ticket {
+		util.IncrementFailedLogin(r.RemoteAddr, "")
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
 	st := ticket.NewServiceTicket(tkt.Ticket, svc, true)
 	if !st.Validate() {
+		util.IncrementFailedLogin(r.RemoteAddr, "")
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}

@@ -55,6 +55,8 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 					Session: util.LoginRequestorSession{Service: svc, Username: tkt.Username}})
 				return
 			}
+		} else {
+			util.IncrementFailedLogin(r.RemoteAddr, "")
 		}
 	}
 
@@ -72,6 +74,8 @@ func loginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	util.GetPersistence("lt").Find(bson.M{"_id": lt}).One(&tkt)
 	util.GetPersistence("lt").Remove(bson.M{"_id": tkt.Ticket})
 	if lt == "" || tkt.Ticket != lt {
+		util.IncrementFailedLogin(r.RemoteAddr, "")
+
 		lt := ticket.NewLoginTicket(tkt.Service)
 		lt.Serve(w, template, util.LoginRequestorData{
 			Config:  config.Get(),
@@ -82,6 +86,8 @@ func loginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	c := context.TODO()
 	token, err := oauthConfig.Exchange(c, code)
 	if err != nil {
+		util.IncrementFailedLogin(r.RemoteAddr, "")
+
 		w.Header().Add("Location", config.Get().UrlPrefix)
 		w.WriteHeader(http.StatusFound)
 		return

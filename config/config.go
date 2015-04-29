@@ -3,6 +3,7 @@ package config
 import (
 	"io/ioutil"
 	"net/url"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -18,6 +19,11 @@ type Config struct {
 	Mongo               struct {
 		Host string `yaml:"host"`
 	} `yaml:"mongo"`
+	Throttling struct {
+		MaxFailuresByIp       int           `yaml:"max_failures_by_ip"`
+		MaxFailuresByUsername int           `yaml:"max_failures_by_username"`
+		DecrementInterval     time.Duration `yaml:"decrement_interval"`
+	} `yaml:"throttling"`
 	Services       []string `yaml:"services"`
 	TicketValidity struct {
 		LoginTicket          int `yaml:"login_ticket"`

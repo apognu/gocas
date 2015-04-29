@@ -9,9 +9,11 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/apognu/gocas/authenticator"
 	"github.com/apognu/gocas/config"
+	"github.com/apognu/gocas/interceptor"
 	"github.com/apognu/gocas/protocol/cas"
 	"github.com/apognu/gocas/protocol/oauth"
 	"github.com/apognu/gocas/util"
+	"github.com/codegangsta/negroni"
 	"github.com/gorilla/mux"
 )
 
@@ -64,8 +66,13 @@ func main() {
 	AvailableProtocols[config.Get().Protocol](sr)
 
 	logrus.Infof("started gocas CAS server, %s", time.Now())
-	err := http.ListenAndServe(config.Get().Listen, r)
-	if err != nil {
-		logrus.Errorf("could not listen: %s", err)
+
+	n := negroni.New()
+	for _, in := range interceptor.AvailableInterceptors {
+		in.Init()
+		n.UseFunc(in.Intercept)
 	}
+	n.UseHandler(r)
+
+	logrus.Fatalf("could not start server: %s", http.ListenAndServe(config.Get().Listen, n))
 }
