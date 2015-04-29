@@ -2,7 +2,6 @@ package oauth
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -105,7 +104,6 @@ func loginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	var info map[string]interface{}
 	err = json.Unmarshal(body, &info)
 	if err != nil {
-		fmt.Println(err)
 		w.Header().Add("Location", config.Get().UrlPrefix)
 		w.WriteHeader(http.StatusFound)
 		return
@@ -116,7 +114,7 @@ func loginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{Name: "CASTGC", Value: tgt.Ticket, Path: "/"})
 
 	if tkt.Service != "" {
-		st := ticket.NewServiceTicket(tkt.Ticket, tkt.Service, false)
+		st := ticket.NewServiceTicket(tgt.Ticket, tkt.Service, false)
 		st.Serve(w, r)
 		return
 	}
