@@ -26,8 +26,8 @@ func restGetTicketGrantingTicketHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	tgt := ticket.NewTicketGrantingTicket(u, util.GetRemoteAddr(r.RemoteAddr))
-	w.WriteHeader(http.StatusCreated)
 	w.Header().Add("Location", fmt.Sprintf("%s%s/%s", config.Get().Url, r.RequestURI, tgt.Ticket))
+	w.WriteHeader(http.StatusCreated)
 }
 
 func restGetServiceTicketHandler(w http.ResponseWriter, r *http.Request) {
