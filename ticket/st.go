@@ -54,7 +54,7 @@ func (st ServiceTicket) Serve(w http.ResponseWriter, r *http.Request) {
 	if !st.Validate() {
 		lt := NewEmptyLoginTicket()
 		w.WriteHeader(http.StatusForbidden)
-		lt.Serve(w, "template/login.tmpl", util.LoginRequestorData{
+		lt.Serve(w, util.ResolveTemplate("login"), util.LoginRequestorData{
 			Config:  config.Get(),
 			Message: util.LoginRequestorMessage{Type: "danger", Message: "The service that asked for authentication is not authorized to do so."}})
 		return

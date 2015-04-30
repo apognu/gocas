@@ -13,6 +13,7 @@ type Config struct {
 	Title               string `yaml:"title"`
 	Url                 string `yaml:"url"`
 	UrlPrefix           string `yaml:"url_prefix"`
+	TemplatePath        string `yaml:"template_path"`
 	RestApi             bool   `yaml:"rest_api"`
 	TrustAuthentication string `yaml:"trust_authentication"`
 	Listen              string `yaml:"listen"`

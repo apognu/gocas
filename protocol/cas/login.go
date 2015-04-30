@@ -11,12 +11,10 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-const template = "template/login.tmpl"
-
 func forbidden(w http.ResponseWriter, svc string, msg string) {
 	lt := ticket.NewLoginTicket(svc)
 	w.WriteHeader(http.StatusForbidden)
-	lt.Serve(w, template, util.LoginRequestorData{
+	lt.Serve(w, util.ResolveTemplate("login"), util.LoginRequestorData{
 		Config:   config.Get(),
 		Session:  util.LoginRequestorSession{Service: svc},
 		Message:  util.LoginRequestorMessage{Type: "danger", Message: msg},
@@ -38,7 +36,7 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 				tgt := ticket.NewTicketGrantingTicket(u, util.GetRemoteAddr(r.RemoteAddr))
 				http.SetCookie(w, &http.Cookie{Name: "CASTGC", Value: tgt.Ticket})
 
-				lt.Serve(w, template, util.LoginRequestorData{
+				lt.Serve(w, util.ResolveTemplate("login"), util.LoginRequestorData{
 					Config:  config.Get(),
 					Session: util.LoginRequestorSession{Service: svc, Username: tgt.Username}})
 				return
@@ -60,7 +58,7 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			} else {
 				// No service ID, display successfull login screen
-				lt.Serve(w, template, util.LoginRequestorData{
+				lt.Serve(w, util.ResolveTemplate("login"), util.LoginRequestorData{
 					Config:  config.Get(),
 					Session: util.LoginRequestorSession{Service: svc, Username: tkt.Username}})
 				return
@@ -84,14 +82,14 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.WriteHeader(http.StatusForbidden)
-		lt.Serve(w, template, util.LoginRequestorData{
+		lt.Serve(w, util.ResolveTemplate("login"), util.LoginRequestorData{
 			Config:  config.Get(),
 			Message: util.LoginRequestorMessage{Type: "danger", Message: "This service requires a pre-established SSO session."}})
 		return
 	}
 
 	// No ST, no TGT, display login form
-	lt.Serve(w, template, util.LoginRequestorData{
+	lt.Serve(w, util.ResolveTemplate("login"), util.LoginRequestorData{
 		Config:   config.Get(),
 		Session:  util.LoginRequestorSession{Service: svc},
 		ShowForm: true})
@@ -143,7 +141,7 @@ func loginAcceptorHandler(w http.ResponseWriter, r *http.Request) {
 
 	// SSO session opened, no service requested
 	nlt := ticket.NewEmptyLoginTicket()
-	nlt.Serve(w, template, util.LoginRequestorData{
+	nlt.Serve(w, util.ResolveTemplate("login"), util.LoginRequestorData{
 		Config:  config.Get(),
 		Session: util.LoginRequestorSession{Service: svc, Username: tgt.Username}})
 }

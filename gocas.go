@@ -4,6 +4,7 @@ import (
 	"flag"
 	"math/rand"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -44,7 +45,16 @@ func main() {
 		logrus.Fatalf("unknown authenticator: %s", config.Get().Authenticator)
 	}
 
+	if stat, err := os.Stat(config.Get().TemplatePath); !os.IsNotExist(err) {
+		if !stat.IsDir() {
+			logrus.Fatalf("template path %s is not a directory", config.Get().TemplatePath)
+		}
+	} else {
+		logrus.Fatalf("template path does not exist: %s", err)
+	}
+
 	r := mux.NewRouter().StrictSlash(true)
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(config.Get().TemplatePath))))
 	r.HandleFunc("/", redirect)
 
 	sr := r

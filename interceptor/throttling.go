@@ -2,6 +2,7 @@ package interceptor
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/apognu/gocas/config"
@@ -38,9 +39,14 @@ func (ThrottlingInterceptor) Init() {
 func (i ThrottlingInterceptor) Intercept(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	ipt, ut := i.getFailureCount(util.GetRemoteAddr(r.RemoteAddr), r.FormValue("username"))
 
+	if strings.HasPrefix(r.RequestURI, "/static/") {
+		next(w, r)
+		return
+	}
+
 	if ipt > 0 || ut > 0 {
 		w.WriteHeader(http.StatusForbidden)
-		ticket.NewEmptyLoginTicket().Serve(w, "template/throttling.tmpl", util.LoginRequestorData{Config: config.Get()})
+		ticket.NewEmptyLoginTicket().Serve(w, util.ResolveTemplate("throttling"), util.LoginRequestorData{Config: config.Get()})
 		return
 	}
 

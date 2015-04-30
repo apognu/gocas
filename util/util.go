@@ -14,6 +14,10 @@ func Url(path string) string {
 	return fmt.Sprintf("%s%s", config.Get().UrlPrefix, path)
 }
 
+func ResolveTemplate(tmpl string) string {
+	return fmt.Sprintf("%s/%s.tmpl", config.Get().TemplatePath, tmpl)
+}
+
 func GetRemoteAddr(raddr string) string {
 	i := strings.LastIndex(raddr, ":")
 	if i == -1 {

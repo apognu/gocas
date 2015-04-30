@@ -16,8 +16,6 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-const template = "template/oauth_login.tmpl"
-
 var oauthConfig *oauth2.Config
 
 func New(r *mux.Router) {
@@ -51,7 +49,7 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			} else {
 				lt := ticket.NewLoginTicket(svc)
-				lt.Serve(w, template, util.LoginRequestorData{
+				lt.Serve(w, util.ResolveTemplate("oauth_login"), util.LoginRequestorData{
 					Config:  config.Get(),
 					Session: util.LoginRequestorSession{Service: svc, Username: tkt.Username}})
 				return
@@ -63,7 +61,7 @@ func loginRequestorHandler(w http.ResponseWriter, r *http.Request) {
 
 	lt := ticket.NewLoginTicket(svc)
 	url := oauthConfig.AuthCodeURL(lt.Ticket)
-	lt.Serve(w, template, util.LoginRequestorData{
+	lt.Serve(w, util.ResolveTemplate("oauth_login"), util.LoginRequestorData{
 		Config:  config.Get(),
 		Session: util.LoginRequestorSession{Url: url}})
 }
@@ -83,11 +81,7 @@ func loginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	util.GetPersistence("lt").Remove(bson.M{"_id": tkt.Ticket})
 	if lt == "" || tkt.Ticket != lt {
 		util.IncrementFailedLogin(r.RemoteAddr, "")
-
-		lt := ticket.NewLoginTicket(tkt.Service)
-		lt.Serve(w, template, util.LoginRequestorData{
-			Config:  config.Get(),
-			Message: util.LoginRequestorMessage{Type: "danger", Message: "Form submission token was incorrect."}})
+		oauthFailed(w)
 		return
 	}
 

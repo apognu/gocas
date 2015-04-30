@@ -2,6 +2,7 @@
 title: GoCAS - Single Sign-On
 url: http://localhost:8080
 url_prefix: /cas
+template_path: /usr/share/gocas
 rest_api: false
 # trust_authentication: never | on-gateway | always
 trust_authentication: never
