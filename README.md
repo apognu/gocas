@@ -7,6 +7,7 @@ Minimalist CAS server in Go. Here what currently works:
 * /logout (no SLO for now)
 * simple whitelisting of exact service hosts (wildcard might come some day)
 * REST API
+* CAS proxy simple implementation
 * Middleware system
  * Failed login attempts throttling (quite native for now)
 

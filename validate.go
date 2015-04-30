@@ -54,5 +54,27 @@ func serviceValidateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write(util.NewCASSuccessResponse(tkt.GetTicketGrantingTicket().Username))
+	pgtUrl := r.FormValue("pgtUrl")
+	if pgtUrl != "" {
+		pgtiou := ticket.NewProxyGrantingTicketIOU()
+		pgt := ticket.NewProxyGrantingTicket(svc, pgtiou.Ticket, tkt.GetTicketGrantingTicket().Username, util.GetRemoteAddr(r.RemoteAddr))
+
+		// TODO: Only accept HTTPS URLs
+		resp, err := http.Get(fmt.Sprintf("%s?pgtIou=%s&pgtId=%s", pgtUrl, pgtiou.Ticket, pgt.Ticket))
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write(util.NewCASFailureResponse("INTERNAL_ERROR", "Internal Server Error"))
+			return
+		}
+		if resp.StatusCode != 200 {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write(util.NewCASFailureResponse("INVALID_PROXY_CALLBACK", "Error requesting proxy callback URL"))
+			return
+		}
+
+		w.Write(util.NewCASSuccessResponse(tkt.GetTicketGrantingTicket().Username, pgtiou.Ticket))
+		return
+	}
+
+	w.Write(util.NewCASSuccessResponse(tkt.GetTicketGrantingTicket().Username, ""))
 }

@@ -2,7 +2,6 @@ package ticket
 
 import (
 	"fmt"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"text/template"
@@ -22,17 +21,12 @@ type ServiceTicket struct {
 }
 
 func NewServiceTicket(tgt string, svc string, sso bool) ServiceTicket {
-	var TicketRunes = []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-	st := make([]rune, 32)
-	for i := range st {
-		st[i] = TicketRunes[rand.Intn(len(TicketRunes))]
-	}
-
+	st := generateTicket("ST", 32)
 	t := time.Unix(time.Now().Unix()+int64(config.Get().TicketValidity.ServiceTicket), 0)
 	tkt := ServiceTicket{
 		Service:  svc,
 		Tgt:      tgt,
-		Ticket:   "ST-" + string(st),
+		Ticket:   st,
 		Validity: t,
 		FromSso:  sso,
 	}

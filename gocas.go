@@ -57,6 +57,9 @@ func main() {
 	sr.HandleFunc("/serviceValidate", serviceValidateHandler).Methods("GET")
 	sr.HandleFunc("/logout", logoutHandler).Methods("GET")
 
+	sr.HandleFunc("/proxy", proxyHandler).Methods("GET")
+	sr.HandleFunc("/proxyValidate", proxyValidateHandler).Methods("GET")
+
 	if config.Get().RestApi {
 		sr.HandleFunc("/v1/tickets", restGetTicketGrantingTicketHandler).Methods("POST")
 		sr.HandleFunc("/v1/tickets/{ticket}", restGetServiceTicketHandler).Methods("POST")

@@ -1,7 +1,6 @@
 package ticket
 
 import (
-	"math/rand"
 	"net/http"
 	"text/template"
 	"time"
@@ -17,16 +16,11 @@ type LoginTicket struct {
 }
 
 func NewLoginTicket(svc string) LoginTicket {
-	var TicketRunes = []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-	lt := make([]rune, 32)
-	for i := range lt {
-		lt[i] = TicketRunes[rand.Intn(len(TicketRunes))]
-	}
-
+	lt := generateTicket("LT", 32)
 	t := time.Unix(time.Now().Unix()+int64(config.Get().TicketValidity.LoginTicket), 0)
 	tkt := LoginTicket{
 		Service:  svc,
-		Ticket:   "LT-" + string(lt),
+		Ticket:   lt,
 		Validity: t,
 	}
 	util.GetPersistence("lt").Insert(tkt)

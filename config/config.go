@@ -29,6 +29,8 @@ type Config struct {
 		LoginTicket          int `yaml:"login_ticket"`
 		TicketGrantingTicket int `yaml:"ticket_granting_ticket"`
 		ServiceTicket        int `yaml:"service_ticket"`
+		ProxyGrantingTicket  int `yaml:"proxy_granting_ticket"`
+		ProxyTicket          int `yaml:"proxy_ticket"`
 	} `yaml:"ticket_validity"`
 	Protocol      string `yaml:"protocol"`
 	Authenticator string `yaml:"authenticator"`

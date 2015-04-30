@@ -1,7 +1,6 @@
 package ticket
 
 import (
-	"math/rand"
 	"time"
 
 	"github.com/apognu/gocas/config"
@@ -16,15 +15,10 @@ type TicketGrantingTicket struct {
 }
 
 func NewTicketGrantingTicket(u string, ip string) TicketGrantingTicket {
-	var TicketRunes = []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-	tgt := make([]rune, 32)
-	for i := range tgt {
-		tgt[i] = TicketRunes[rand.Intn(len(TicketRunes))]
-	}
-
+	tgt := generateTicket("TGT", 32)
 	t := time.Unix(time.Now().Unix()+int64(config.Get().TicketValidity.TicketGrantingTicket), 0)
 	tkt := TicketGrantingTicket{
-		Ticket:   "TGT-" + string(tgt),
+		Ticket:   tgt,
 		Username: u,
 		ClientIP: ip,
 		Validity: t,
