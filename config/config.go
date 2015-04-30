@@ -40,6 +40,11 @@ type Config struct {
 		Base string `yaml:"base"`
 		Dn   string `yaml:"dn"`
 	} `yaml:"ldap"`
+	Radius struct {
+		Host   string `yaml:"host"`
+		Port   string `yaml:"port"`
+		Secret string `yaml:"secret"`
+	} `yaml:"radius"`
 	Oauth struct {
 		ClientID          string   `yaml:"client_id"`
 		Secret            string   `yaml:"secret"`

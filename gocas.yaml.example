@@ -38,6 +38,11 @@ ldap:
 	base: ou=Users,dc=domain,dc=tld
 	dn: uid
 
+radius:
+	host: 127.0.0.1
+	port: 1812
+	secret: testing123
+
 oauth:
 	clientid: XXX
 	secret: XXX
